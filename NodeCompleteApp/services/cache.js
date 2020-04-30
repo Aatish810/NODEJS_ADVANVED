@@ -7,21 +7,21 @@ const util = require('util');
 const redisUrl = 'redis://127.0.0.1:6379';
 const client = redis.createClient(redisUrl);
 
-client.get = util.promisify(client.get);
+client.hget = util.promisify(client.hget);
 
 const exec = mongoose.Query.prototype.exec;
 
 // Making a new property so that we can call exe on specific api call only having .cache() attached with them.
-mongoose.Query.prototype.cache = function() {
+mongoose.Query.prototype.cache = function(option = {}) {
     this._cache = true;
-    return this;;
+    this._hashKey = JSON.stringify(option.key || '')
+    return this;
 }
 
-mongoose.Query.prototype.exec = async function (option = {}) {
+mongoose.Query.prototype.exec = async function () {
 
     // Check if cache()  if attached to query or not
     if(!this._cache) {
-        this._hashKey = JSON.stringify(options.key || '')
         return exec.apply(this, arguments);
     }
 
@@ -44,7 +44,7 @@ mongoose.Query.prototype.exec = async function (option = {}) {
     }
 
     const result = await exec.apply(this, arguments);
-    client.hset(this._hashKey, key, JSON.stringify(result), 'EX', 10);
+    client.hset(this._hashKey, key, JSON.stringify(result), 'EX', 10, () =>{})
     return result;
 }
 
