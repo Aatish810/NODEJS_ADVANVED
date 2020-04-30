@@ -1,23 +1,19 @@
-const PUPPETEER = require('puppeteer');
-const sessionFactory = require('./factories/sessionFactory');
-const userFactory = require('./factories/userFactory');
-let BROWSER, PAGE;
+const Page = require('./helpers/page');
+
+let PAGE;
 
 beforeEach(async () => {
-    BROWSER = await PUPPETEER.launch({
-        headless: false
-    });
-    PAGE = await BROWSER.newPage();
+   PAGE = await Page.build();
     await PAGE.goto('localhost:3000');
 
 });
 
 afterEach(async () => {
-    await BROWSER.close();
+    await PAGE.close();
 });
 
 test('Check if header has correct text', async() => {
-    const text = await PAGE.$eval('a.brand-logo', el => el.innerHTML);
+    const text = await PAGE.getContentOf('a.brand-logo');
     expect(text).toEqual('Blogster');
 });
 
@@ -29,14 +25,7 @@ test('Check if we call google api', async() => {
 
 
 test('When signed in show logout button', async () => {
-    const user = await userFactory();
-    const {session, sig} = await sessionFactory(user);
-
-    await PAGE.setCookie({name: 'session', value: session});
-    await PAGE.setCookie({name: 'session.sig', value: sig});
-    await PAGE.goto('localhost:3000');
-    await PAGE.waitFor('a[href="/auth/logout"]');
-
-    const text = await PAGE.$eval('a[href="/auth/logout"]', el => el.innerHTML);
+    await PAGE.login();
+    const text = await PAGE.getContentOf('a[href="/auth/logout"]');
     expect(text).toEqual('Logout');
 });
