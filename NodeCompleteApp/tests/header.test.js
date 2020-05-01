@@ -4,7 +4,7 @@ let PAGE;
 
 beforeEach(async () => {
    PAGE = await Page.build();
-    await PAGE.goto('localhost:3000');
+    await PAGE.goto('http://localhost:3000');
 
 });
 
